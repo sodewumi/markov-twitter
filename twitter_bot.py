@@ -17,22 +17,25 @@ api = twitter.Api(
 # This will print info about credentials to make sure they're correct
 # print api.VerifyCredentials()
 
+def like_txt():
+    liked = False
+    while not liked:
+        mtg = markov.Twitter(2)
+        tweet = mtg.read(sys.argv[1:])
+        print tweet
+        choice = raw_input("Do you like this text?")
+        if choice == "yes":
+            status = api.PostUpdate(tweet)
+            liked = True
+
 def main():
+    like_txt()
 
-    mtg = markov.Twitter(2)
-    tweet = mtg.read(sys.argv[1:])
-    status = api.PostUpdate(tweet)
-
-    stopped = False
-    while not stopped:
+    while True:
         redo = raw_input("Enter to tweet again [q to quit] > ")
         if redo == "q":
             return "Bye Bye"
-        mtg = markov.Twitter(2)
-        tweet = mtg.read(sys.argv[1:])
-        status = api.PostUpdate(tweet)
-
-    print status.text    
+        like_txt()
 
 if __name__ == "__main__":
     main()
