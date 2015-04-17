@@ -1,64 +1,152 @@
 import sys
 from random import choice
 
+class LowerCaseMixin(object):
+    """A Mixin that converts any string to lowercase"""
 
-class MarkovMachine(object):
+    def lower_case(self, markov_text):
+        return markov_text.lower()
+
+class RemovePunctuationMixin(object):
+    """A mixin that removes punctuation from a string"""
+
+    def rm_punctuation(self, markov_text):
+        string_wo_punctuation = ""
+        for ltr in markov_text:
+            if ltr.isalpha() or ltr == " ":
+                string_wo_punctuation += ltr
+        return string_wo_punctuation
+
+class SimpleMarkovGenerator(object):
+    def __init__(self, length):
+        self.length = length
+
 
     def read_files(self, filenames):
         """Given a list of files, make chains from them."""
-
-        body = ""
-
+        file_list = []
         for filename in filenames:
-            text_file = open(filename)
-            body = body + text_file.read()
-            text_file.close()
+            open_file = open(filename)
+            open_file = open_file.read().split()
+            file_list.extend(open_file)
+        
+        # print file_list
+        return self.make_chains(file_list)
 
-        self.make_chains(body)
 
-    def make_chains(self, corpus):
-        """Takes input text as string; returns dictionary of markov chains."""
 
-        self.chains = {}
+    def make_chains(self, corpus_path):
+        """Takes input text as string; stores chains."""
 
-        words = corpus.split()
+        key = []
+        n_grams = {}
 
-        for i in range(len(words) - 2):
-            key = (words[i], words[i + 1])
-            value = words[i + 2]
+        for i in range(len(corpus_path)-self.length):
 
-            if key not in self.chains:
-                self.chains[key] = []
+            for t in range(self.length):
+                key.append(corpus_path[i+t])
 
-            self.chains[key].append(value)
+            key = tuple(key)
 
-    def make_text(self):
+            nxt_word = corpus_path[i + self.length]
+
+            n_grams.setdefault(key, []).append(nxt_word)
+
+            key = []
+
+        for i in range(5):
+            print str(i +1)+": " + self.make_text(n_grams)
+        
+
+    def make_text(self, chains):
         """Takes dictionary of markov chains; returns random text."""
 
-        key = choice(self.chains.keys())
-        words = [key[0], key[1]]
+        # choose a random bi-gram then find the value of said bi-gram. 
+        # Afterward choose a random value from the generated list
+        random_n_gram = choice(chains.keys())
+        random_word = choice(chains[random_n_gram])
+        generated_txt = random_word
 
-        while key in self.chains:
-            # Keep looping until we have a key that isn't in the chains
-            # (which would mean it was the end of our original text)
-            #
-            # Note that for long texts (like a full book), this might mean
-            # it would run for a very long time.
+        # the last word from the previous bi-gram key along with the randomly
+        # choosen word is saved for the next iteration of the while loop
+        next_tuple = random_n_gram[1:] + tuple([random_word])
+        n_gram_value = chains.get(next_tuple)
 
-            word = choice(self.chains[key])
-            words.append(word)
-            key = (key[1], word)
+        while n_gram_value:
+            # the random word is put in the first element of the nxt word tuple,
+            # and the second element is the newly choosen random word.
+            new_random_word = choice(n_gram_value)
+            generated_txt = generated_txt +" "+ new_random_word
+            next_tuple = next_tuple[1:] + tuple([new_random_word])
 
-        text = " ".join(words)
+            # if the bi-gram from the previous while loop has a value, return it
+            # If there is not a value, return None and close the loop
+            n_gram_value = chains.get(next_tuple)
 
-        # This is the clumsiest way to make sure it's never longer than
-        # 140 characters; can you think of better ways?
-        return text[:140]
+
+        return generated_txt
+
+class Twitter(SimpleMarkovGenerator, LowerCaseMixin, RemovePunctuationMixin):
+
+    def __init__(self, length):
+        super(Twitter, self).__init__(length)
+    
+    def read(self, filenames):
+        self.read_files(filenames)
+
+    def make_text(self, chains):
+        """Takes dictionary of markov chains; returns random text."""
+
+        # choose a random bi-gram then find the value of said bi-gram. 
+        # Afterward choose a random value from the generated list
+        random_n_gram = choice(chains.keys())
+        random_word = choice(chains[random_n_gram])
+        generated_txt = random_word
+
+        # the last word from the previous bi-gram key along with the randomly
+        # choosen word is saved for the next iteration of the while loop
+        next_tuple = random_n_gram[1:] + tuple([random_word])
+        n_gram_value = chains.get(next_tuple)
+
+        while n_gram_value and len(generated_txt) < 141:
+            # the random word is put in the first element of the nxt word tuple,
+            # and the second element is the newly choosen random word.
+            new_random_word = choice(n_gram_value)
+            if len(generated_txt +" "+ new_random_word) < 141:
+                generated_txt = generated_txt +" "+ new_random_word
+                next_tuple = next_tuple[1:] + tuple([new_random_word])
+            else:
+                break
+
+            # if the bi-gram from the previous while loop has a value, return it
+            # If there is not a value, return None and close the loop
+            n_gram_value = chains.get(next_tuple)
+
+
+        # generated_txt = self.lower_case(generated_txt) LowerCaseMixin
+        # return self.rm_punctuation(generated_txt) RemovePunctuationMixin
+        return generated_txt
+
+
+
 
 
 if __name__ == "__main__":
-    filenames = sys.argv[1:]
 
-    generator = MarkovMachine()
-    generator.read_files(filenames)
-    print generator.make_text()
+    # we should get list of filenames from sys.argv
+    # we should make an instance of the class
+    # we should call the read_files method with the list of filenames
+    # we should call the make_text method 5x
+
+    n_gram_length = int(raw_input("How long do you want you n_gram to be > "))
+
+    punctuation = raw_input("Do you want to check for punctuation? Yes or No > ")
+
+    twitter = raw_input("do you want a twitter bot?")
+
+    if twitter == "yes":
+        mwp = Twitter(n_gram_length)
+        mwp.read(sys.argv[1:])
+    elif twitter == "no":  
+        smg = SimpleMarkovGenerator(n_gram_length)
+        smg.read_files(sys.argv[1:])
