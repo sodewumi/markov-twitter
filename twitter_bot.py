@@ -1,5 +1,7 @@
 import os
 import twitter
+import markov
+import sys
 
 # Use Python os.environ to get at environmental variables
 #
@@ -11,8 +13,13 @@ api = twitter.Api(
     consumer_secret=os.environ["TWITTER_CONSUMER_SECRET"],
     access_token_key=os.environ["TWITTER_ACCESS_TOKEN_KEY"],
     access_token_secret=os.environ["TWITTER_ACCESS_TOKEN_SECRET"])
-# This will print info about credentials to make sure they're correct
-print api.VerifyCredentials()
 
-status = api.PostUpdate("Hello World")
+# This will print info about credentials to make sure they're correct
+# print api.VerifyCredentials()
+
+
+mtg = markov.Twitter(2)
+tweet = mtg.read(sys.argv[1:])
+
+status = api.PostUpdate(tweet)
 print status.text

@@ -54,8 +54,7 @@ class SimpleMarkovGenerator(object):
 
             key = []
 
-        for i in range(5):
-            print str(i +1)+": " + self.make_text(n_grams)
+        return self.make_text(n_grams)
         
 
     def make_text(self, chains):
@@ -86,13 +85,13 @@ class SimpleMarkovGenerator(object):
 
         return generated_txt
 
-class Twitter(SimpleMarkovGenerator, LowerCaseMixin, RemovePunctuationMixin):
+class Twitter(SimpleMarkovGenerator):
 
     def __init__(self, length):
         super(Twitter, self).__init__(length)
     
     def read(self, filenames):
-        self.read_files(filenames)
+        return self.read_files(filenames)
 
     def make_text(self, chains):
         """Takes dictionary of markov chains; returns random text."""
@@ -122,9 +121,6 @@ class Twitter(SimpleMarkovGenerator, LowerCaseMixin, RemovePunctuationMixin):
             # If there is not a value, return None and close the loop
             n_gram_value = chains.get(next_tuple)
 
-
-        # generated_txt = self.lower_case(generated_txt) LowerCaseMixin
-        # return self.rm_punctuation(generated_txt) RemovePunctuationMixin
         return generated_txt
 
 
